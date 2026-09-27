@@ -1,0 +1,82 @@
+player_count,hand_category,hand_category_name,hand_category_name_zh,count,probability
+2,0,High Card,高牌,281,0.0562
+2,1,One Pair,一对,1848,0.3696
+2,2,Two Pair,两对,1559,0.3118
+2,3,Three of a Kind,三条,376,0.0752
+2,4,Straight,顺子,427,0.0854
+2,5,Flush,同花,265,0.053
+2,6,Full House,葫芦,234,0.0468
+2,7,Four of a Kind,四条,8,0.0016
+2,8,Straight Flush,同花顺,2,0.0004
+3,0,High Card,高牌,90,0.018
+3,1,One Pair,一对,1473,0.2946
+3,2,Two Pair,两对,1792,0.3584
+3,3,Three of a Kind,三条,424,0.0848
+3,4,Straight,顺子,536,0.1072
+3,5,Flush,同花,331,0.0662
+3,6,Full House,葫芦,335,0.067
+3,7,Four of a Kind,四条,19,0.0038
+3,8,Straight Flush,同花顺,0,0.0
+4,0,High Card,高牌,37,0.0074
+4,1,One Pair,一对,1197,0.2394
+4,2,Two Pair,两对,1715,0.343
+4,3,Three of a Kind,三条,554,0.1108
+4,4,Straight,顺子,621,0.1242
+4,5,Flush,同花,434,0.0868
+4,6,Full House,葫芦,410,0.082
+4,7,Four of a Kind,四条,27,0.0054
+4,8,Straight Flush,同花顺,5,0.001
+5,0,High Card,高牌,8,0.0016
+5,1,One Pair,一对,931,0.1862
+5,2,Two Pair,两对,1635,0.327
+5,3,Three of a Kind,三条,647,0.1294
+5,4,Straight,顺子,753,0.1506
+5,5,Flush,同花,485,0.097
+5,6,Full House,葫芦,493,0.0986
+5,7,Four of a Kind,四条,45,0.009
+5,8,Straight Flush,同花顺,3,0.0006
+6,0,High Card,高牌,2,0.0004
+6,1,One Pair,一对,760,0.152
+6,2,Two Pair,两对,1566,0.3132
+6,3,Three of a Kind,三条,714,0.1428
+6,4,Straight,顺子,806,0.1612
+6,5,Flush,同花,564,0.1128
+6,6,Full House,葫芦,529,0.1058
+6,7,Four of a Kind,四条,47,0.0094
+6,8,Straight Flush,同花顺,12,0.0024
+7,0,High Card,高牌,1,0.0002
+7,1,One Pair,一对,663,0.1326
+7,2,Two Pair,两对,1431,0.2862
+7,3,Three of a Kind,三条,755,0.151
+7,4,Straight,顺子,923,0.1846
+7,5,Flush,同花,559,0.1118
+7,6,Full House,葫芦,610,0.122
+7,7,Four of a Kind,四条,51,0.0102
+7,8,Straight Flush,同花顺,7,0.0014
+8,0,High Card,高牌,0,0.0
+8,1,One Pair,一对,557,0.1114
+8,2,Two Pair,两对,1336,0.2672
+8,3,Three of a Kind,三条,777,0.1554
+8,4,Straight,顺子,959,0.1918
+8,5,Flush,同花,665,0.133
+8,6,Full House,葫芦,652,0.1304
+8,7,Four of a Kind,四条,43,0.0086
+8,8,Straight Flush,同花顺,11,0.0022
+9,0,High Card,高牌,0,0.0
+9,1,One Pair,一对,451,0.0902
+9,2,Two Pair,两对,1242,0.2484
+9,3,Three of a Kind,三条,824,0.1648
+9,4,Straight,顺子,983,0.1966
+9,5,Flush,同花,671,0.1342
+9,6,Full House,葫芦,743,0.1486
+9,7,Four of a Kind,四条,72,0.0144
+9,8,Straight Flush,同花顺,14,0.0028
+10,0,High Card,高牌,0,0.0
+10,1,One Pair,一对,405,0.081
+10,2,Two Pair,两对,1146,0.2292
+10,3,Three of a Kind,三条,848,0.1696
+10,4,Straight,顺子,1064,0.2128
+10,5,Flush,同花,697,0.1394
+10,6,Full House,葫芦,750,0.15
+10,7,Four of a Kind,四条,74,0.0148
+10,8,Straight Flush,同花顺,16,0.0032
