@@ -1,0 +1,28 @@
+{
+  "hands": 200,
+  "players": 6,
+  "seed": 261,
+  "policy": "mixed",
+  "max_raises": 3,
+  "endings": {
+    "showdown": 182,
+    "all_others_folded": 18
+  },
+  "net_profit": [
+    -436,
+    -756,
+    2131,
+    -1211,
+    522,
+    -250
+  ],
+  "mean_profit_per_hand": [
+    -2.18,
+    -3.78,
+    10.655,
+    -6.055,
+    2.61,
+    -1.25
+  ],
+  "zero_sum": true
+}

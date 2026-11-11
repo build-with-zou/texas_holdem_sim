@@ -33,7 +33,7 @@ class PlayerState:
     """单个玩家在一局中的筹码和行动状态。"""
 
     player_id: int
-    stack: int
+    stack: int | None
     folded: bool = False
     all_in: bool = False
     street_bet: int = 0
@@ -61,8 +61,17 @@ class GameState:
     community_cards: list[int] = field(default_factory=list)
     action_history: list[tuple[int, Action, int]] = field(default_factory=list)
     to_act: int | None = None
+    max_raises: int | None = None
+    raise_count: int = field(default=0, init=False)
+    _pending: set[int] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self) -> None:
+        if [p.player_id for p in self.players] != list(range(len(self.players))):
+            raise ValueError("玩家编号必须按座位连续排列。")
+        if any(p.stack is not None and (not isinstance(p.stack, int) or p.stack <= 0) for p in self.players):
+            raise ValueError("筹码必须为正整数，或用 None 表示无上限。")
+        if self.max_raises is not None and (not isinstance(self.max_raises, int) or self.max_raises < 0):
+            raise ValueError("加注次数上限必须为非负整数。")
         if len(self.players) < 2:
             raise ValueError("至少需要两名玩家。")
         if self.small_blind <= 0 or self.big_blind < self.small_blind:
@@ -90,8 +99,9 @@ class GameState:
         return None
 
     def _commit(self, player: PlayerState, amount: int) -> int:
-        amount = max(0, min(amount, player.stack))
-        player.stack -= amount
+        amount = max(0, min(amount, player.stack)) if player.stack is not None else amount
+        if player.stack is not None:
+            player.stack -= amount
         player.street_bet += amount
         player.committed += amount
         self.pot += amount
@@ -111,7 +121,24 @@ class GameState:
         self._commit(bb, self.big_blind)
         self.current_bet = max(sb.street_bet, bb.street_bet)
         self.min_raise = self.big_blind
-        self.to_act = self._next_active(bb.player_id)
+        self._pending = {p.player_id for p in self.players if p.active}
+        self._set_next_actor(bb.player_id)
+
+    def _set_next_actor(self, after: int) -> None:
+        self._pending.intersection_update(p.player_id for p in self.players if p.active)
+        if len(self.active_players) <= 1:
+            self._pending.clear()
+        if len(self.contenders) == 1:
+            only = self.contenders[0]
+            if only.street_bet >= self.current_bet:
+                self._pending.clear()
+        self.to_act = next(((after + offset) % len(self.players)
+                            for offset in range(1, len(self.players) + 1)
+                            if (after + offset) % len(self.players) in self._pending), None)
+
+    @property
+    def raises_allowed(self) -> bool:
+        return self.max_raises is None or self.raise_count < self.max_raises
 
     def legal_actions(self, player_id: int | None = None) -> dict[Action, int]:
         """返回动作及其需要投入的筹码；数值为 0 的动作不代表投入筹码。"""
@@ -125,14 +152,16 @@ class GameState:
         actions: dict[Action, int] = {Action.FOLD: 0}
         if to_call == 0:
             actions[Action.CHECK] = 0
-        elif player.stack > 0:
-            actions[Action.CALL] = min(to_call, player.stack)
-        if player.stack > to_call:
+        elif player.stack is None or player.stack > 0:
+            actions[Action.CALL] = to_call if player.stack is None else min(to_call, player.stack)
+        can_raise = self.raises_allowed and any(p.active and p.player_id != player_id for p in self.players)
+        if can_raise and (player.stack is None or player.stack > to_call):
             if self.current_bet == 0:
-                actions[Action.BET] = min(self.min_raise, player.stack)
+                actions[Action.BET] = self.big_blind if player.stack is None else min(self.big_blind, player.stack)
             else:
-                actions[Action.RAISE] = min(to_call + self.min_raise, player.stack)
-        if player.stack > 0:
+                minimum = to_call + self.min_raise
+                actions[Action.RAISE] = minimum if player.stack is None else min(minimum, player.stack)
+        if player.stack is not None and player.stack > 0 and (can_raise or player.stack <= to_call):
             actions[Action.ALL_IN] = player.stack
         return actions
 
@@ -149,9 +178,13 @@ class GameState:
         required = legal[action]
         if action in (Action.BET, Action.RAISE):
             required = legal[action] if amount is None else amount
-            if required != legal[action] or required <= 0:
-                raise ValueError("当前版本只允许最小下注/最小加注；全押请使用 all_in。")
+            if (not isinstance(required, int) or required < legal[action]
+                    or (player.stack is not None and required > player.stack)):
+                raise ValueError("下注须满足最小下注/加注额，且不能超过剩余筹码。")
+        if amount is not None and action not in (Action.BET, Action.RAISE) and amount != required:
+            raise ValueError("弃牌、过牌和跟注的投入由当前状态确定。")
         paid = self._commit(player, required)
+        self._pending.discard(player.player_id)
         if action == Action.FOLD:
             player.folded = True
         elif action in (Action.BET, Action.RAISE, Action.ALL_IN):
@@ -160,18 +193,21 @@ class GameState:
                 if raise_size >= self.min_raise:
                     self.min_raise = raise_size
                 self.current_bet = player.street_bet
+                self.raise_count += 1
+                self._pending.update(p.player_id for p in self.players
+                                     if p.active and p.player_id != player.player_id
+                                     and p.street_bet < self.current_bet)
         self.action_history.append((player.player_id, action, paid))
-        self.to_act = self._next_active(player.player_id)
+        self._set_next_actor(player.player_id)
         return paid
 
     def betting_round_complete(self) -> bool:
-        active = [p for p in self.players if p.active]
-        if len([p for p in self.players if not p.folded]) <= 1:
-            return True
-        return bool(active) and all(p.street_bet == self.current_bet for p in active)
+        return self.to_act is None
 
     def advance_street(self, community_cards: list[int] | None = None) -> None:
         """结束当前下注轮并进入下一街；摊牌前不自动发公共牌。"""
+        if len(self.active_players) <= 1:
+            raise ValueError("只剩一位玩家，应直接结算。")
         if not self.betting_round_complete():
             raise ValueError("当前下注轮尚未结束。")
         order = [Street.PREFLOP, Street.FLOP, Street.TURN, Street.RIVER]
@@ -184,16 +220,20 @@ class GameState:
             player.street_bet = 0
         self.current_bet = 0
         self.min_raise = self.big_blind
-        self.to_act = self._next_active(self.button)
+        self.raise_count = 0
+        self._pending = {p.player_id for p in self.players if p.active}
+        self._set_next_actor(self.button)
 
 
-def create_game(num_players: int, starting_stack: int = 100, button: int = 0) -> GameState:
+def create_game(num_players: int, starting_stack: int | None = 100, button: int = 0,
+                max_raises: int | None = None) -> GameState:
     """创建一局标准盲注、等筹码的游戏状态。"""
     if num_players < 2:
         raise ValueError("num_players 至少为 2。")
-    if starting_stack <= 0:
+    if starting_stack is not None and starting_stack <= 0:
         raise ValueError("starting_stack 必须为正数。")
     return GameState(
         players=[PlayerState(player_id=i, stack=starting_stack) for i in range(num_players)],
         button=button,
+        max_raises=max_raises,
     )
