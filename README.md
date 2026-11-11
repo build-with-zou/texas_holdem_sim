@@ -42,7 +42,8 @@ python simulate.py --trials 50000 --players 2 6 9 --seed 261
 - `winning_hand_distribution.csv`：不同人数下最终获胜牌型分布；
 - `win_probability_by_player_count.png`：胜率随玩家人数变化图；
 - `tie_rate_by_player_count.png`：平局率随玩家人数变化图；
-- `winning_hand_distribution_[N]_players.png`：最大人数场景下的获胜牌型分布图。
+- `winning_hand_distribution_[N]_players.png`：每种人数场景下的获胜牌型分布图；
+- `winning_hand_distribution_comparison.png`：不同人数下获胜牌型分布的汇总对比图。
 
 ## 当前模型的解释边界
 
@@ -59,3 +60,15 @@ python simulate.py --trials 50000 --players 2 6 9 --seed 261
 - 长期收益与筹码变化。
 
 这些会作为下一阶段策略模型加入。
+
+## 起手牌强度实验
+
+使用 `preflop_equity.py` 可以在指定人数下计算 169 类标准起手牌的条件权益。例如 6 人桌：
+
+```bash
+.venv/bin/python preflop_equity.py --players 6 --trials 5000 --seed 261 \
+  --output outputs/preflop_strength_6_players.csv
+```
+
+`relative_to_average` 是该起手牌权益与理论平均权益 `1 / 玩家人数` 的比值：比值至少为 1.5 判为强牌，0.75 到 1.5 判为中等牌，低于 0.75 判为弱牌。模拟次数越多，牌力排序越稳定。
+
