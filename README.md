@@ -61,6 +61,18 @@ python simulate.py --trials 50000 --players 2 6 9 --seed 261
 
 这些会作为下一阶段策略模型加入。
 
+## 策略模型的基础实现
+
+当前已新增 `poker_game.py`，为后续策略实验提供基础框架：
+
+- `GameState` 保存按钮位、盲注、筹码、底池、公共牌、当前下注额和行动顺序；
+- `PlayerState` 保存每位玩家的筹码、弃牌、全押和本轮/全局投入；
+- 支持翻牌前、翻牌、转牌、河牌四个下注阶段；
+- 支持弃牌、过牌、跟注、下注、加注和全押，并检查当前动作是否合法；
+- 支持结束下注轮并推进到下一街。
+
+该模块暂时不决定玩家应该采取什么动作，玩家策略和牌力估计将在下一步接入。
+
 ## 起手牌强度实验
 
 使用 `preflop_equity.py` 可以在指定人数下计算 169 类标准起手牌的条件权益。例如 6 人桌：
@@ -71,4 +83,44 @@ python simulate.py --trials 50000 --players 2 6 9 --seed 261
 ```
 
 `relative_to_average` 是该起手牌权益与理论平均权益 `1 / 玩家人数` 的比值：比值至少为 1.5 判为强牌，0.75 到 1.5 判为中等牌，低于 0.75 判为弱牌。模拟次数越多，牌力排序越稳定。
+
+## 翻牌前性格策略
+
+`personalities.py` 提供 `PreflopTable.lookup`、`action_probabilities` 和
+`choose_action`。玩家的 `hole_cards` 使用 `holdem.py` 的牌 ID，
+`personality` 使用 `Personality` 枚举；默认紧弱，可为每位玩家分别设置。
+查表使用本局初始人数（2–10），对手弃牌后仍沿用原人数，避免将有选择地
+留下的对手误当成随机对手。牌力为权益乘人数，≥1.5 为强牌，≥0.75 为中等牌。
+
+以下概率是人为设定的实验参数，不是拟合结果。元组顺序是强牌、中等牌、弱牌：
+
+| 性格 | 面对跟注成本时继续概率 | 继续后主动下注/加注概率 |
+|---|---|---|
+| 紧弱 | 95%、20%、5% | 10%、5%、1% |
+| 紧凶 | 95%、20%、5% | 80%、50%、20% |
+| 松弱 | 99%、80%、40% | 10%、5%、1% |
+| 松凶 | 99%、80%、40% | 80%、50%、20% |
+
+每次行动重新抽样；继续且不主动加注时跟注。可以免费过牌时始终继续，
+按第二组概率下注/加注，否则过牌；不能加注时将这部分概率归入跟注/过牌。
+主动动作仅使用当前引擎的最小下注/加注，不额外随机全押，短筹码跟注可能全押。
+目前不考虑跟注金额、位置、对手范围、历史行动，且拒绝在翻牌后使用起手牌表。
+
+```python
+import numpy as np
+from personalities import Personality, PreflopTable, choose_action
+from poker_game import create_game
+
+game = create_game(6)
+player = game.players[game.to_act]
+player.hole_cards = (12, 25)  # Ac Ad
+player.personality = Personality.TIGHT_AGGRESSIVE
+rng = np.random.default_rng(261)
+table = PreflopTable()
+action = choose_action(game, table, rng)
+game.apply_action(action)
+```
+
+验证：`.venv/bin/python -m unittest discover -s tests -v`。
+这只是决策接口，完整下注轮结束判断、全押重开加注和边池结算仍需完善后才能进行收益实验。
 
