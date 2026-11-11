@@ -154,6 +154,47 @@ def plot_winning_hand_distribution(distribution: pd.DataFrame, output_dir: Path,
     plt.close()
 
 
+def plot_all_winning_hand_distributions(distribution: pd.DataFrame, output_dir: Path) -> None:
+    for player_count in sorted(distribution["player_count"].unique()):
+        plot_winning_hand_distribution(
+            distribution,
+            output_dir,
+            selected_player_count=int(player_count),
+        )
+
+
+def plot_winning_hand_distribution_comparison(distribution: pd.DataFrame, output_dir: Path) -> None:
+    pivot = distribution.pivot(
+        index="player_count",
+        columns="hand_category_name",
+        values="probability",
+    )
+    category_order = [
+        HAND_CATEGORY_NAMES[category]
+        for category in sorted(HAND_CATEGORY_NAMES)
+    ]
+    pivot = pivot[category_order]
+
+    plt.figure(figsize=(11, 6.2))
+    for category_name in category_order:
+        plt.plot(
+            pivot.index,
+            pivot[category_name],
+            marker="o",
+            linewidth=1.8,
+            label=category_name,
+        )
+    plt.title("Winning Hand Distribution by Player Count")
+    plt.xlabel("Number of players")
+    plt.ylabel("Probability")
+    plt.xticks(pivot.index)
+    plt.grid(alpha=0.25)
+    plt.legend(ncol=3, fontsize=8)
+    plt.tight_layout()
+    plt.savefig(output_dir / "winning_hand_distribution_comparison.png", dpi=180)
+    plt.close()
+
+
 def write_outputs(summary: pd.DataFrame, distribution: pd.DataFrame, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     for stale_chart in output_dir.glob("winning_hand_distribution_*_players.png"):
@@ -164,11 +205,8 @@ def write_outputs(summary: pd.DataFrame, distribution: pd.DataFrame, output_dir:
 
     plot_win_probabilities(summary, output_dir)
     plot_tie_rate(summary, output_dir)
-    plot_winning_hand_distribution(
-        distribution,
-        output_dir,
-        selected_player_count=int(summary["player_count"].max()),
-    )
+    plot_all_winning_hand_distributions(distribution, output_dir)
+    plot_winning_hand_distribution_comparison(distribution, output_dir)
 
 
 def parse_args() -> argparse.Namespace:

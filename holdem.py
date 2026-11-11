@@ -25,6 +25,15 @@ RANK_LABELS = {
 
 SUIT_LABELS = ["c", "d", "h", "s"]
 
+# Suit mapping:
+# c = clubs = 梅花, d = diamonds = 方块, h = hearts = 红桃, s = spades = 黑桃
+SUIT_NAMES = {
+    0: {"abbr": "c", "english": "clubs", "chinese": "梅花"},
+    1: {"abbr": "d", "english": "diamonds", "chinese": "方块"},
+    2: {"abbr": "h", "english": "hearts", "chinese": "红桃"},
+    3: {"abbr": "s", "english": "spades", "chinese": "黑桃"},
+}
+
 HAND_CATEGORY_NAMES = {
     0: "High Card",
     1: "One Pair",
